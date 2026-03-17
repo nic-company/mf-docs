@@ -111,11 +111,69 @@ mf-lib-shared/src/
 ```json
 {
   "name": "@nic/mf-lib-shared",
-  "version": "1.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./dist/globals.css": "./dist/globals.css",
+    "./tailwind.config": "./tailwind.config.ts",
+    "./config/eslint": {
+      "types": "./dist/config/eslint/index.d.ts",
+      "import": "./dist/config/eslint/index.mjs",
+      "require": "./dist/config/eslint/index.js"
+    },
+    "./config/prettier": {
+      "types": "./dist/config/prettier/index.d.ts",
+      "import": "./dist/config/prettier/index.mjs",
+      "require": "./dist/config/prettier/index.js"
+    },
+    "./config/eslint/base": "./dist/config/eslint/base.js",
+    "./config/eslint/react": "./dist/config/eslint/react.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "@eslint/js": "^9.39.1",
+    "@radix-ui/react-slot": "^1.2.4",
+    "class-variance-authority": "latest",
+    "clsx": "latest",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "lucide-react": "latest",
+    "tailwind-merge": "latest",
+    "typescript-eslint": "^8.57.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "autoprefixer": "latest",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwindcss": "^3",
+    "tailwindcss-animate": "latest",
+    "tsup": "latest",
+    "typescript": "^5"
   }
 }
 ```
@@ -129,36 +187,61 @@ mf-lib-shared/src/
 ```json
 "exports": {
   ".": {
-    "types": "./dist/index.d.ts",  // TypeScript 타입 정의(types를 맨 위에 위치하는 것이 관례)
-    "default": "./dist/index.js"    // 실제 JavaScript 모듈
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.js"
   },
-  "./components": {
-    "types": "./dist/components/index.d.ts",
-    "default": "./dist/components/index.js"
+  "./dist/globals.css": "./dist/globals.css",
+  "./tailwind.config": "./tailwind.config.ts",
+  "./config/eslint": {
+    "types": "./dist/config/eslint/index.d.ts",
+    "import": "./dist/config/eslint/index.mjs",
+    "require": "./dist/config/eslint/index.js"
   },
-  "./utils": {
-    "types": "./dist/utils/index.d.ts",
-    "default": "./dist/utils/index.js"
+  "./config/prettier": {
+    "types": "./dist/config/prettier/index.d.ts",
+    "import": "./dist/config/prettier/index.mjs",
+    "require": "./dist/config/prettier/index.js"
   },
-  "./types": {
-    "types": "./dist/types/index.d.ts",
-    "default": "./dist/types/index.js"
-  },
-  "./config/eslint": "./dist/config/eslint/index.js",
   "./config/eslint/base": "./dist/config/eslint/base.js",
-  "./config/eslint/react": "./dist/config/eslint/react.js",
-  "./config/prettier": "./dist/config/prettier/index.js",
-  "./styles": "./lib/styles/index.css", // dist 대신 lib 사용(workspace 패키지이므로 소스 직접 참조)
-  "./styles/tokens": "./lib/styles/tokens.css", // dist 대신 lib 사용(workspace 패키지이므로 소스 직접 참조)
-  "./styles/base": "./lib/styles/base.css" // dist 대신 lib 사용(workspace 패키지이므로 소스 직접 참조)
-}
+  "./config/eslint/react": "./dist/config/eslint/react.js"
+},
 ```
 
 **중요**: 
 - `exports`는 **빌드된 파일** (`./dist/`)을 참조해야 합니다
-- 소스 파일(`./lib/`)이 아닌 컴파일된 결과물을 참조
-- `types`와 `default`를 함께 지정하여 타입과 런타임 코드를 명확히 구분
-- `default`는 모든 모듈 시스템(CommonJS, ESM)에서 사용 가능한 fallback 옵션
+- 소스 파일(`./src/`)이 아닌 컴파일된 결과물을 참조
+- `types`와 `default`또는 `import, require`를 함께 지정하여 타입과 런타임 코드를 명확히 구분
+- `default`는 모든 모듈 시스템(CommonJS, ESM)에서 사용 가능한 fallback 옵션입니다.
+- `import`는 ESM(ECMAScript Module) 방식으로 import될 때 사용되는 엔트리 포인트를 정의합니다.
+- `require`는 CommonJS 방식(`require()`)으로 import될 때 사용되는 엔트리 포인트를 정의합니다.
+
+- **exports 조건 목록**
+  - **공식 Node.js 조건**
+    | 조건 | 설명 |
+    | --- | --- |
+    | **import** | import / import() (ESM) 방식으로 불러올 때 사용되는 엔트리포인트 |
+    | **require** | require() (CommonJS) 방식으로 불러올 때 사용되는 엔트리포인트 |
+    | **default** | 위 조건들에 매칭되지 않을 때 사용되는 fallback. ESM/CJS 모두에서 동작 |
+    | **node** | Node.js 환경에서 실행될 때 적용 |
+    | **node-addons** | Node.js native addon (*.node) 사용 시 적용 |
+    | **browser** | 브라우저 환경에서 실행될 때 적용 (번들러가 인식) |
+    | **worker** | Web Worker / Node.js Worker Thread 환경에서 적용 |
+    | **deno** | Deno 런타임에서 실행될 때 적용 |
+    | **development** | 개발 환경 (NODE_ENV=development)에서 적용 |
+    | **production** | 프로덕션 환경 (NODE_ENV=production)에서 적용 |
+  - **TypeScript / 빌드 툴 관련 조건**
+    | 조건 | 설명 |
+    | --- | --- |
+    | **types** | TypeScript가 타입 정의(.d.ts)를 찾을 때 사용하는 엔트리포인트 |
+    | **source** | 번들러가 원본 소스 파일(.ts 등)을 직접 참조할 때 사용 (Vite, Rollup 등) |
+    | **module** | 번들러용 ESM 엔트리포인트. Webpack/Rollup이 인식하는 비공식 조건 |
+    | **bundle** | 이미 번들된 버전을 가리킬 때 사용하는 관례적 조건 |
+
+  - **중요한 조건**
+    - 순서가 중요 - 위에서부터 매칭되는 첫 번째 조건이 사용됩니다. default는 반드시 마지막에 위치해야 합니다.
+    - types는 항상 첫 번째 - TypeScript 공식 권고사항으로, types를 가장 먼저 배치해야 타입 추론이 올바르게 동작합니다.
+    - 커스텀 조건도 가능 - 번들러나 런타임이 --conditions 플래그로 임의 조건을 추가할 수 있습니다.
 
 **장점**: 
 - **명시적인 API 관리**: exports에 정의하지 않은 파일은 외부에서 접근 불가
@@ -198,16 +281,26 @@ import prettierConfig from '@rm/monorepo-mf-shared-library/config/prettier';
 ### 4. tsconfig.json 설정
 ```json
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./lib",
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    "noEmit": false,
-    "allowImportingTsExtensions": false
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["lib/**/*"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
 ```
@@ -215,90 +308,44 @@ import prettierConfig from '@rm/monorepo-mf-shared-library/config/prettier';
 :::info 설명
 **주요 설정 옵션**:
 
-* **`extends`**: 루트의 `tsconfig.base.json`을 상속하여 공통 설정을 재사용
-  - 모노레포 전체의 기본 TypeScript 설정을 일관되게 유지
+* **`target`**: 컴파일 결과물의 JavaScript 버전
+  - `ES2020`으로 설정하여 최신 문법(옵셔널 체이닝, nullish 병합 등) 지원
 
-* **`outDir`**: 컴파일된 JavaScript 파일과 타입 정의 파일이 생성될 디렉토리
-  - `./dist`로 설정하여 빌드 결과물을 별도 폴더에 분리
+* **`lib`**: 컴파일 시 사용할 타입 정의 라이브러리
+  - `ES2020`, `DOM`, `DOM.Iterable`을 포함하여 브라우저 환경 API 타입 지원
 
-* **`rootDir`**: 컴파일할 소스 파일의 루트 디렉토리
-  - `./lib`로 설정하여 소스 코드의 시작점 명시
-  - outDir의 디렉토리 구조가 rootDir과 동일하게 생성됨
+* **`module`** / **`moduleResolution`**: 모듈 시스템 및 모듈 해석 방식
+  - `ESNext` / `bundler` 조합으로 Vite 등 번들러 환경에 최적화된 ESM 방식 사용
 
-* **`declaration`**: TypeScript 타입 정의 파일(`.d.ts`) 자동 생성
-  - `true`로 설정하여 각 `.ts` 파일에 대응하는 `.d.ts` 파일 생성
-  - 다른 패키지에서 이 라이브러리를 사용할 때 타입 지원 제공
+* **`jsx`**: JSX 변환 방식
+  - `react-jsx`로 설정하여 React 17+ 자동 JSX 변환 사용 (`import React` 불필요)
 
-* **`declarationMap`**: 타입 정의 파일의 소스맵(`.d.ts.map`) 생성
-  - `true`로 설정하여 IDE에서 타입 정의로 이동 시 원본 TypeScript 파일로 이동 가능
-  - 디버깅 및 개발 경험 향상
+* **`strict`** / **`noUnusedLocals`** / **`noUnusedParameters`**: 엄격한 타입 검사
+  - `true`로 설정하여 타입 안전성 강화 및 미사용 변수·파라미터 오류 처리
 
 * **`noEmit`**: 컴파일 결과물 생성 여부 제어
-  - `false`로 설정하여 실제로 `.js`와 `.d.ts` 파일을 생성
-  - (Vite 등 일부 번들러는 타입 체크만 하고 빌드는 하지 않기 위해 `true`를 사용하기도 함)
+  - `true`로 설정하여 TypeScript는 타입 체크만 수행하고 파일은 생성하지 않음
+  - 실제 빌드(`.js` 파일 생성)는 Vite 번들러가 담당
 
-* **`allowImportingTsExtensions`**: `.ts` 확장자를 명시한 import 허용 여부
-  - `false`로 설정하여 표준 JavaScript 호환 import 방식 사용 (`import from './module'` 형태)
+* **`esModuleInterop`** / **`skipLibCheck`**: 호환성 설정
+  - `esModuleInterop: true`로 CommonJS 모듈을 default import 방식으로 사용 가능
+  - `skipLibCheck: true`로 외부 라이브러리 타입 정의 파일의 오류 검사 생략
+
+* **`resolveJsonModule`**: `.json` 파일 import 허용
+  - `true`로 설정하여 TypeScript 코드에서 JSON 파일을 직접 import 가능
+
+* **`declaration`** / **`declarationMap`**: TypeScript 타입 정의 파일(`.d.ts`) 생성 설정
+  - `true`로 설정되어 있으나, `noEmit: true`이므로 실제 `.d.ts` 파일은 생성되지 않음
+  - 타입 정의 파일 생성이 필요한 경우 별도 빌드 도구(예: `vite-plugin-dts`) 사용 필요
+
+* **`paths`**: 경로 별칭(alias) 설정
+  - `@/*`를 `./src/*`로 매핑하여 절대 경로처럼 짧고 명확한 import 경로 사용 가능
 
 * **`include`**: 컴파일 대상 파일 패턴
-  - `lib/**/*`로 설정하여 lib 폴더 하위의 모든 파일 포함
+  - `src`로 설정하여 `src` 폴더 하위의 모든 파일 포함
 
 * **`exclude`**: 컴파일에서 제외할 파일/폴더
   - `node_modules`, `dist` 폴더 제외하여 불필요한 컴파일 방지
-
-**빌드 결과**:
-```
-@nic/mf-lib-shared/
-├── lib/                      # 소스 코드 (rootDir)
-│   ├── components/
-│   │   └── button/
-│   │       └── Button.tsx
-│   └── utils/
-│       └── format.ts
-└── dist/                     # 빌드 결과물 (outDir)
-    ├── components/
-    │   └── button/
-    │       ├── Button.js          # 컴파일된 JavaScript
-    │       ├── Button.d.ts        # 타입 정의 파일
-    │       └── Button.d.ts.map    # 소스맵
-    └── utils/
-        ├── format.js
-        ├── format.d.ts
-        └── format.d.ts.map
-```
-:::
-
-:::info `dts` 타입 파일 관련(<span class="admonition-title">*.d.ts</span> 타입파일 생성)
-* **TypeScript 컴파일러의 기본 기능으로 생성**
-  - 현재 프로젝트에서는 별도의 dts 플러그인 없이 TypeScript 컴파일러(tsc)의 기본 기능만으로 타입 정의 파일이 생성되고 있습니다.
-* **핵심 설정**:
-```json
-// tsconfig.json
-"declaration": true,
-"declarationMap": true,
-```
-  - `tsconfig.json`의 `"declaration": true` 옵션이 핵심입니다. 이 옵션이 활성화되면 TypeScript 컴파일러가 `.js` 파일과 함께 `.d.ts` 타입 정의 파일을 자동으로 생성합니다.
-* **빌드 과정**:
-  - 루트에서 `pnpm run build:shared-library` 명령어를 실행하면, 스크립트가 동작합니다.
-  - `pnpm --filter @rm/monorepo-mf-shared-library build` 실행.
-  - 공유 라이브러리 shared library 의 build 스크립트가 동작합니다.
-  - shared library 의 build 스크립트는 `package.json` 파일에 정의되어 있습니다.
-    ```json
-    "scripts": {
-      "build": "tsc",
-    }
-    ```
-  - 결과적으로 tsc 명령어가 실행됩니다.
-  - tsc가 tsconfig.json 설정을 읽고:
-    - lib/**/* 폴더의 TypeScript 파일들을 컴파일
-    - dist 폴더에 .js 파일 생성
-    - declaration: true 옵션으로 .d.ts 타입 정의 파일 자동 생성
-    - declarationMap: true 옵션으로 .d.ts.map 파일도 생성
-  - 실행 흐름:
-    - 루트 build:shared-library → pnpm --filter로 패키지 선택 → shared-library의 build 스크립트 실행 → tsc 실행 → JS + .d.ts 파일 생성
-
-결국 사용자가 직접 tsc를 입력하지 않았지만, pnpm의 필터 기능을 통해 자동으로 해당 패키지의 tsc 명령어가 실행된 것입니다.
-
 :::
 
 
@@ -316,38 +363,73 @@ import prettierConfig from '@rm/monorepo-mf-shared-library/config/prettier';
     "exports": {
       //...
       // highlight-start
-      "./config/eslint": "./dist/config/eslint/index.js",
+      "./config/eslint": {
+        "types": "./dist/config/eslint/index.d.ts",
+        "import": "./dist/config/eslint/index.mjs",
+        "require": "./dist/config/eslint/index.js"
+      },
+      "./config/prettier": {
+        "types": "./dist/config/prettier/index.d.ts",
+        "import": "./dist/config/prettier/index.mjs",
+        "require": "./dist/config/prettier/index.js"
+      },
       "./config/eslint/base": "./dist/config/eslint/base.js",
-      "./config/eslint/react": "./dist/config/eslint/react.js",
-      "./config/prettier": "./dist/config/prettier/index.js"
+      "./config/eslint/react": "./dist/config/eslint/react.js"
       // highlight-end
     },
+  }
+  ```
+* `package.json` 에 다음과 같이 관련 패키지가 설치 되어야합니다.
+  - `eslint-plugin-react` 패키지는 `eslint` 버전 10.x 에서는 사용할 수 없습니다. 따라서 9.x 버전을 사용합니다.
+  - `dependencies` 필드에 설치하는 이유는 remote 앱이 npm install @nic/mf-lib-shared 하면 플러그인도 자동 설치되도록 하기 위해서입니다. `devDependencies` 필드에 설치하면 플러그인이 설치되지 않습니다.
+  ```json
+  "dependencies": {
+    "@eslint/js": "^9.39.1",
+    "globals": "^17.4.0", // ESLint에서 전역 변수(global variables) 목록을 제공하는 패키지입니다.
+    "typescript-eslint": "^8.57.1",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    ...기존 의존성
   }
   ```
 * 각 리포트 앱에서 사용할 때는 다음과 같이 사용합니다.
   ```tsx
   // eslint.config.ts
-  import { react } from '@rm/monorepo-mf-shared-library/config/eslint';
+  import { defineConfig, globalIgnores } from "eslint/config";
+  import nextVitals from "eslint-config-next/core-web-vitals";
+  import nextTs from "eslint-config-next/typescript";
+  // highlight-start
+  import { react } from "@nic/mf-lib-shared/eslint";
+  // highlight-end
 
-  export default defineConfig([
-    globalIgnores(['dist']),
+  const eslintConfig = defineConfig([
+    ...nextVitals,
+    ...nextTs,
+    // Override default ignores of eslint-config-next.
+    globalIgnores([
+      // Default ignores of eslint-config-next:
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+    ]),
+    // highlight-start
     ...react,
-    // 필요시 이 앱에만 적용할 추가 규칙을 여기에 작성
-    // {
-    //   rules: {
-    //     // 앱별 커스텀 규칙
-    //   }
-    // }
+    // highlight-end
   ]);
+
+  export default eslintConfig;
   ```
   ```tsx
   // prettier.config.mjs
-  import sharedConfig from '@rm/monorepo-mf-shared-library/config/prettier';
+  import sharedConfig from "@nic/mf-lib-shared/config/prettier";
 
   /**
   * Prettier 설정
   * 공통 라이브러리의 Prettier 설정을 가져와 사용
-  * 
+  *
   * @type {import('prettier').Config}
   */
   export default {
@@ -356,6 +438,19 @@ import prettierConfig from '@rm/monorepo-mf-shared-library/config/prettier';
     // printWidth: 100,
   };
   ```
+
+
+
+
+
+
+
+
+## 배포를 위한 설정 수정
+---
+* `@nic/mf-lib-shared` 패키지를 사용하는 앱에서 설치할 때 npm은 해당 레포지토리를 그대로 다운로드합니다. 그리고 package.json의 main, exports 필드가 모두 dist/를 가리키고 있기 때문에 `dist/`가 git에 없으면 리모트 앱에서 `npm install` 시 패키지를 찾을 수 없어 에러가 납니다. 따라서 `dist/` 폴더를 git에 추가하여 배포할 수 있도록 합니다.
+* `.gitignore` 파일에 `dist/` 폴더 부분에 주석처리하여 dist폴더도 배포 되게 적용.
+
 
 
 

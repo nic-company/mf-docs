@@ -12,6 +12,7 @@ title: "mf-app-main 환경구성"
 :::info <span class="admonition-title">Next(CLI)</span>를 이용한 프로젝트 생성
 * 새로운 Next.js 앱을 만드는 방법으로 `create-next-app`을 사용합니다.
 * [Next공식문서: https://nextjs.org/docs/app/getting-started/installation#create-with-the-cli](https://nextjs.org/docs/app/getting-started/installation#create-with-the-cli)
+* [Next.js Multi Zones 공식문서: https://nextjs.org/docs/14/pages/building-your-application/deploying/multi-zones](https://nextjs.org/docs/14/pages/building-your-application/deploying/multi-zones)
 :::
 **작업위치**: 작업하고자하는 마이크로 프론트엔드 전체 작업 폴더에서 아래 명령어를 실행합니다.
 ```sh
@@ -149,3 +150,145 @@ npx create-next-app@latest
 - **ESLint**가 `v8.21.0` 부터 새로운 구성방식인 플랫 구성(Flat Config) 시스템을 지원합니다. 기존 방식은 `.eslintrc` 파일을 이용한 구성 방식이었습니다.
 - `v9.0.0`부터는 기본 구성방식이 플랫 구성(Flat Config) 시스템으로 바뀌게 됩니다.
 :::
+
+
+
+
+
+
+
+
+## 환경 변수 파일 구성
+---
+Remote 앱 URL을 환경 변수로 관리한다.
+* `.env.local` — 로컬 개발용
+* `.env.development` — 개발 서버용
+* `.env.production` — 프로덕션용
+```env
+# .env.local 예시
+NEXT_PUBLIC_REMOTE_REMOTE1_URL=http://localhost:5174
+NEXT_PUBLIC_REMOTE_REMOTE2_URL=http://localhost:5175
+```
+
+
+
+
+
+
+
+
+## next.config.ts - Multi Zones rewrites 설정
+---
+Host 앱이 Remote 앱들의 요청을 프록시하도록 rewrites를 설정한다.  
+Remote 앱 각각은 basePath: '/blog'처럼 독립적인 basePath를 가져야 충돌이 없다.
+```tsx
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/blog",
+        destination: `${process.env.NEXT_PUBLIC_REMOTE_REMOTE1_URL}/blog`,
+      },
+      {
+        source: "/blog/:path*",
+        destination: `${process.env.NEXT_PUBLIC_REMOTE_REMOTE1_URL}/blog/:path*`,
+      },
+      // 다른 remote 앱 경로 추가...
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+
+
+
+
+
+
+## 공유 라이브러리(`@nic/mf-lib-shared`) 연동
+---
+* 공유 라이브러리를 GitHub/GitLab 등에 올린 경우 npm install을 통해 공유 라이브러리 git을 설치할 수 있습니다.  
+  ```sh
+  npm install git+https://github.com/nic-company/mf-lib-shared.git
+  ```
+  ```json
+  // package.json
+  "dependencies": {
+    "@nic/mf-lib-shared": "git+https://github.com/nic-company/mf-lib-shared.git"
+  }
+  ```
+  - host 앱과 remote 앱이 각자 배포 시점에 다른 커밋을 참조할 수 있으므로 좀 더 안정적인 설치 배포 방식은 커밋 해시로 버전 고정하는 것이 권장됩니다.
+    ```json
+    "dependencies": {
+      "@nic/mf-lib-shared": "git+https://github.com/nic-company/mf-lib-shared.git#commit-hash"
+      // 또는 "@nic/mf-lib-shared": "git+https://github.com/nic-company/mf-lib-shared.git#v1.0.0"
+    }
+    ```
+* 공유 라이브러리가 아직 npm에 배포되기 전이면, `file:` 경로 또는 git 링크로 연결할 수 있습니다.
+  ```json
+  "dependencies": {
+    "@nic/mf-lib-shared": "file:../mf-lib-shared"
+  }
+  ```
+
+  :::tip <span class="admonition-title">공유 라이브러리 배포 방식</span> (중장기 권장 방식)
+  * 중장기적으로는 GitHub Package Registry를 사용하는 것이 권장됩니다.
+  ```sh
+  # mf-lib-shared에서 배포
+  npm publish --registry https://npm.pkg.github.com
+
+  # 각 앱 .npmrc에 추가
+  @nic:registry=https://npm.pkg.github.com
+  //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+  ```
+  ```json
+  // package.json
+  "@nic/mf-lib-shared": "^1.0.0"  // 진짜 semver 사용 가능
+  ```
+  &#8251; 인터넷 연결 없는 폐쇄망 환경이라면
+  사내 Verdaccio 프라이빗 레지스트리 운영(완전 독립)
+  :::
+
+* 공유 라이브러리의 UI 컴포넌트 파일에 Tailwind 클래스가 포함되어 있으므로, Tailwind v4가 해당 소스를 스캔하도록 `src/assets/styles/app.css`에 **@source** 지시어를 추가한다.
+  ```css
+  @import "tailwindcss";
+  /* 공유 라이브러리의 빌드 결과물로 가져오려면 src를 dist로 변경해야한다. */
+  @source "../../node_modules/@nic/mf-lib-shared/src/**/*.{ts,tsx}";
+  ```
+
+
+
+
+
+
+
+## tsconfig.json 경로 alias 추가
+---
+공유 라이브러리 import 경로를 명확하게 하기 위하여 `tsconfig.json`에 **path**를 추가한다.  
+@nic/mf-lib-shared path alias는 로컬 file 링크 개발 시 타입 추론을 돕기 위한 설정이다. npm 배포 후에는 제거한다.
+* <span class="text-color-red">현재는 `git+저장소url` 방식으로 설치 했기 때문에 아래 alias를 적용하지 않는다.</span>
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@nic/mf-lib-shared": ["../../mf-lib-shared/src/index.ts"] // 로컬 개발용
+    }
+  }
+}
+```
+
+
+
+
+
+
+
+## layout.tsx - 공통 레이아웃 구성
+---
+Multi Zones에서 Host 앱의 레이아웃은 Host 앱에서 직접 렌더링되는 페이지에만 적용된다. Remote 앱의 페이지에는 Remote 앱 자체 레이아웃이 적용되므로, 공통 네비게이션/헤더가 필요하다면 공유 라이브러리에 Shell 컴포넌트를 두고 Host/Remote 앱 모두에서 import하는 방식을 권장한다.
+
