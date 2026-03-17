@@ -70,6 +70,7 @@ const sidebars: SidebarsConfig = {
         'task/ready/set-mf-proj/set-docusaurus-docs',
         'task/ready/set-mf-proj/set-mf-lib-shared',
         'task/ready/set-mf-proj/set-mf-app-main',
+        'task/ready/set-mf-proj/npm-link',
       ],
     },
   ],
